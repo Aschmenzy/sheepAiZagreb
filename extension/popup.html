@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hacker News Modifier</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 Hacker News Modifier</h1>
+      <p class="subtitle">Personalize your reading experience</p>
+    </div>
+    
+    <div class="content">
+      <label class="question">What's your profession?</label>
+      <p class="description">We'll customize content based on your role</p>
+      
+      <div class="profession-grid">
+        <button class="profession-btn" data-profession="Security Engineer">
+          <span class="icon">🔒</span>
+          <span class="title">Security Engineer</span>
+        </button>
+        
+        <button class="profession-btn" data-profession="Software Developer">
+          <span class="icon">💻</span>
+          <span class="title">Software Developer</span>
+        </button>
+        
+        <button class="profession-btn" data-profession="DevOps/SRE">
+          <span class="icon">⚙️</span>
+          <span class="title">DevOps/SRE</span>
+        </button>
+        
+        <button class="profession-btn" data-profession="System Administrator">
+          <span class="icon">🖥️</span>
+          <span class="title">System Administrator</span>
+        </button>
+        
+        <button class="profession-btn" data-profession="Security Analyst">
+          <span class="icon">🛡️</span>
+          <span class="title">Security Analyst</span>
+        </button>
+        
+        <button class="profession-btn" data-profession="Other">
+          <span class="icon">👤</span>
+          <span class="title">Other</span>
+        </button>
+      </div>
+      
+      <div class="selected-profession" id="selectedProfession" style="display: none;">
+        <p>Current: <strong id="currentProfession"></strong></p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

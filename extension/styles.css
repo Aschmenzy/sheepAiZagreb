@@ -1,0 +1,49 @@
+/* Custom banner styles */
+#custom-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-weight: bold;
+  font-size: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Highlighted keywords */
+.highlight-keyword {
+  background-color: #fff3cd;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  color: #856404;
+}
+
+/* Reading time label */
+.reading-time {
+  background-color: #e7f3ff;
+  color: #0066cc;
+  padding: 8px 12px;
+  border-radius: 5px;
+  display: inline-block;
+  margin: 10px 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* External links styling */
+.external-link {
+  color: #28a745 !important;
+  text-decoration: underline;
+}
+
+.external-link:hover {
+  color: #1e7e34 !important;
+}
+
+/* Optional: Add some spacing improvements */
+body {
+  line-height: 1.6;
+}
