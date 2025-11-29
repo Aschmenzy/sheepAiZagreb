@@ -79,33 +79,71 @@ function highlightKeywords() {
   });
 }
 
-// Example 3: Add reading time estimates
-function addReadingTime() {
-  // More specific selector for article bodies
-  const articles = document.querySelectorAll('.body-post');
+// Add reading time by fetching the actual article
+async function addReadingTime() {
+  const articleBoxes = document.querySelectorAll('.home-post-box');
   
-  articles.forEach(article => {
-    // Check if we already added reading time by looking for the element
-    const parent = article.parentElement;
-    if (!parent) return;
-    
-    // Check if previous sibling is already a reading time label
-    const prevSibling = article.previousElementSibling;
-    if (prevSibling && prevSibling.classList.contains('reading-time')) {
-      return; // Already added
+  for (const articleBox of articleBoxes) {
+    // Skip if already has reading time
+    if (articleBox.querySelector('.reading-time')) {
+      continue;
     }
     
-    const text = article.textContent;
-    const wordCount = text.trim().split(/\s+/).length;
-    const readingTime = Math.ceil(wordCount / 200); // Average reading speed
+    // Get the article link
+    const link = articleBox.closest('.story-link');
+    if (!link) continue;
     
+    const articleUrl = link.href;
+    let readingTime = 1; // Default
+    
+    // Check if it's an actual thehackernews.com article
+    if (articleUrl.includes('thehackernews.com')) {
+      try {
+        // Fetch the article page
+        const response = await fetch(articleUrl);
+        const html = await response.text();
+        
+        // Parse the HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Get all paragraph elements from the article body
+        const articleBody = doc.querySelector('.articlebody');
+        if (articleBody) {
+          const paragraphs = articleBody.querySelectorAll('p');
+          let totalText = '';
+          paragraphs.forEach(p => {
+            totalText += p.textContent + ' ';
+          });
+          
+          // Calculate reading time
+          const wordCount = totalText.trim().split(/\s+/).length;
+          readingTime = Math.ceil(wordCount / 200);
+        }
+      } catch (error) {
+        console.log('Error fetching article:', error);
+      }
+    } else {
+      // For external links, use the description text
+      const descElement = articleBox.querySelector('.home-desc');
+      if (descElement) {
+        const text = descElement.textContent;
+        const wordCount = text.trim().split(/\s+/).length;
+        readingTime = Math.max(1, Math.ceil(wordCount / 200));
+      }
+    }
+    
+    // Create reading time label
     const timeLabel = document.createElement('div');
     timeLabel.className = 'reading-time';
     timeLabel.textContent = `📖 ${readingTime} min read`;
     
-    // Insert before the article
-    parent.insertBefore(timeLabel, article);
-  });
+    // Insert into item-label
+    const itemLabel = articleBox.querySelector('.item-label');
+    if (itemLabel) {
+      itemLabel.insertBefore(timeLabel, itemLabel.firstChild);
+    }
+  }
 }
 
 // Example 4: Change link colors for external links
