@@ -535,6 +535,9 @@ async function getExplanation(selectedText) {
   // Remove markdown code blocks if present
   content = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
   
+  // Convert markdown bold (**text**) to HTML (<strong>text</strong>)
+  content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
   // Add this explanation to conversation history so user can ask follow-ups
   conversationHistory.push(
     { role: 'user', content: `Explain this: "${selectedText}"` },
@@ -562,7 +565,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   console.log('Running extension modifications...');
   addCustomBanner();
-  highlightKeywords();
+  //highlightKeywords();
   addReadingTime();
   styleExternalLinks();
 })();
