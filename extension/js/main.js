@@ -1,93 +1,70 @@
-// Load and display user preferences
-document.addEventListener('DOMContentLoaded', function() {
-  chrome.storage.sync.get(['profession', 'allInterests', 'summaryLevel'], function(result) {
-    const profession = result.profession || '-';
-    const interests = result.allInterests || [];
-    const summaryLevel = result.summaryLevel !== undefined ? result.summaryLevel : 1; // Default to medium (1)
-    
-    console.log('Loaded profession:', profession);
-    console.log('Loaded interests:', interests);
-    console.log('Loaded summary level:', summaryLevel);
-    
-    document.getElementById('dashboardProfession').textContent = profession;
-    document.getElementById('dashboardInterestCount').textContent = `${interests.length} selected`;
-    
-    // Set summary slider value
-    document.getElementById('summarySlider').value = summaryLevel;
-    updateSummaryLabel(summaryLevel);
-    
-    // Display interests in dropdown
-    displayInterestsDropdown(interests);
-  });
+let userId = null;
+let userProfession = null;
+let userInterests = [];
 
-  // Check if user is on thehackernews.com to show/hide Chat with AI button
-  checkCurrentTab();
-
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check if user has completed setup
+  const stored = await chrome.storage.sync.get(['userId', 'profession', 'interestIds', 'setupComplete']);
+  
+  if (!stored.setupComplete) {
+    // Redirect to setup if not complete
+    console.log('Setup not complete, redirecting to popup.html');
+    window.location.href = 'popup.html';
+    return;
+  }
+  
+  userId = stored.userId;
+  
+  // Load user data from backend
+  await loadUserProfile();
+  
   // Initialize event listeners
   initializeEventListeners();
 });
 
-// Check current tab and show/hide Chat with AI button accordingly
-function checkCurrentTab() {
-  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-    const chatButton = document.getElementById('chatWithAI');
+async function loadUserProfile() {
+  try {
+    const userData = await ApiService.getUser(userId);
     
-    if (tabs[0] && tabs[0].url) {
-      const url = tabs[0].url;
-      // Check if URL matches thehackernews.com/2025/
-      if (url.includes('thehackernews.com/2025/')) {
-        chatButton.style.display = 'block';
-        
-        // Update button text with article title
-        const title = tabs[0].title;
-        if (title) {
-          // Remove " - The Hacker News" or similar suffix
-          const cleanTitle = title.replace(/\s*[-–—]\s*The Hacker News.*$/i, '').trim();
-          
-          // Truncate if too long
-          const maxLength = 50;
-          const displayTitle = cleanTitle.length > maxLength 
-            ? cleanTitle.substring(0, maxLength) + '...' 
-            : cleanTitle;
-          
-          chatButton.innerHTML = `🤖 Chat About: ${displayTitle}`;
-        } else {
-          chatButton.innerHTML = '🤖 Chat with AI About Articles';
-        }
-      } else {
-        chatButton.style.display = 'none';
-      }
-    } else {
-      // If we can't determine the URL, hide the button
-      chatButton.style.display = 'none';
-    }
-  });
+    userProfession = userData.job;
+    userInterests = userData.interests;
+    
+    // Display profession
+    document.getElementById('dashboardProfession').textContent = userProfession;
+    
+    // Display interest count
+    document.getElementById('dashboardInterestCount').textContent = `${userInterests.length} selected`;
+    
+    // Populate interests dropdown
+    populateInterestsDropdown();
+    
+    console.log('User profile loaded:', userData);
+  } catch (error) {
+    console.error('Error loading user profile:', error);
+    document.getElementById('dashboardProfession').textContent = 'Error loading profile';
+    document.getElementById('dashboardInterestCount').textContent = 'Error';
+  }
 }
 
-function displayInterestsDropdown(interests) {
+function populateInterestsDropdown() {
   const dropdownContent = document.getElementById('dropdownContent');
-  const dropdownHeaderText = document.getElementById('dropdownHeaderText');
-  
   dropdownContent.innerHTML = '';
   
-  if (interests.length > 0) {
-    // Update header text
-    dropdownHeaderText.textContent = `${interests.length} interest${interests.length !== 1 ? 's' : ''} selected`;
-    
-    // Add each interest to dropdown
-    interests.forEach(interest => {
-      const item = document.createElement('div');
-      item.className = 'interest-item';
-      item.innerHTML = `
-        <span class="interest-bullet"></span>
-        <span>${interest.text}</span>
-      `;
-      dropdownContent.appendChild(item);
-    });
-  } else {
-    dropdownHeaderText.textContent = 'No interests selected';
-    dropdownContent.innerHTML = '<p class="no-interests">No interests selected</p>';
+  if (userInterests.length === 0) {
+    dropdownContent.innerHTML = '<div class="interest-item">No interests selected</div>';
+    return;
   }
+  
+  userInterests.forEach(interest => {
+    const item = document.createElement('div');
+    item.className = 'interest-item';
+    item.innerHTML = `
+      <span class="interest-icon">✓</span>
+      <span class="interest-name">${interest.name}</span>
+    `;
+    dropdownContent.appendChild(item);
+  });
 }
 
 function initializeEventListeners() {
@@ -96,103 +73,86 @@ function initializeEventListeners() {
   const dropdownContent = document.getElementById('dropdownContent');
   const dropdownArrow = document.getElementById('dropdownArrow');
   
-  dropdownHeader.addEventListener('click', function(e) {
-    e.stopPropagation();
-    dropdownContent.classList.toggle('open');
-    dropdownArrow.classList.toggle('open');
-  });
-  
-  // Close dropdown when clicking outside
-  document.addEventListener('click', function(e) {
-    if (!dropdownHeader.contains(e.target) && !dropdownContent.contains(e.target)) {
+  dropdownHeader.addEventListener('click', function() {
+    const isOpen = dropdownContent.classList.contains('open');
+    
+    if (isOpen) {
       dropdownContent.classList.remove('open');
-      dropdownArrow.classList.remove('open');
+      dropdownArrow.textContent = '▼';
+    } else {
+      dropdownContent.classList.add('open');
+      dropdownArrow.textContent = '▲';
     }
   });
-
-  // Summary slider - 3 discrete levels
-  const slider = document.getElementById('summarySlider');
   
-  // Snap to nearest level on change
-  slider.addEventListener('change', function() {
-    const value = snapToLevel(parseInt(this.value));
-    this.value = value;
-    updateSummaryLabel(value);
+  // Summary slider
+  const summarySlider = document.getElementById('summarySlider');
+  const summaryLevel = document.getElementById('summaryLevel');
+  
+  summarySlider.addEventListener('input', function() {
+    const value = this.value;
+    let level = 'Medium Summary';
     
-    // Save to storage
-    chrome.storage.sync.set({ summaryLevel: value }, function() {
-      console.log('Summary level saved:', value);
-    });
+    if (value < 33) {
+      level = 'Full Articles';
+    } else if (value > 66) {
+      level = 'Brief Summary';
+    }
+    
+    summaryLevel.textContent = level;
+    
+    // Save summary preference
+    chrome.storage.sync.set({ summaryLevel: value });
   });
   
-  // Update label while dragging
-  slider.addEventListener('input', function() {
-    const value = parseInt(this.value);
-    updateSummaryLabel(value);
+  // Load saved summary level
+  chrome.storage.sync.get(['summaryLevel'], function(result) {
+    if (result.summaryLevel) {
+      summarySlider.value = result.summaryLevel;
+      summarySlider.dispatchEvent(new Event('input'));
+    }
   });
-
-  // View filtered news - open thehackernews.com
+  
+  // View Filtered News button
   document.getElementById('viewFiltered').addEventListener('click', function() {
+    // Open thehackernews.com
     chrome.tabs.create({ url: 'https://thehackernews.com' });
   });
-
+  
   // Chat with AI button
   document.getElementById('chatWithAI').addEventListener('click', function() {
-    // Send message to content script to open chat panel
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "openChat" });
-        window.close(); // Close the popup
-      }
+    // Open thehackernews.com and trigger chat mode
+    chrome.tabs.create({ url: 'https://thehackernews.com' }, function(tab) {
+      // Send message to open chat after page loads
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tab.id, { action: 'openChat' });
+      }, 2000);
     });
   });
-
-  // Edit preferences - go back to setup
-  document.getElementById('editPreferences').addEventListener('click', function() {
-    // Clear setup complete flag to allow editing
-    chrome.storage.sync.set({ setupComplete: false }, function() {
-      window.location.href = 'popup.html';
-    });
+  
+  // Edit Preferences button
+  document.getElementById('editPreferences').addEventListener('click', async function() {
+    // Clear setupComplete to allow editing
+    await chrome.storage.sync.set({ setupComplete: false });
+    window.location.href = 'popup.html';
   });
-
-  // Reset all preferences
-  document.getElementById('resetPreferences').addEventListener('click', function() {
-    if (confirm('Are you sure you want to reset all preferences? This will restart the setup process.')) {
-      chrome.storage.sync.clear(function() {
-        console.log('All preferences cleared');
+  
+  // Reset Preferences button
+  document.getElementById('resetPreferences').addEventListener('click', async function() {
+    if (confirm('Are you sure you want to reset all preferences? This will delete your account and you will need to set up again.')) {
+      try {
+        // Clear Chrome storage
+        await chrome.storage.sync.clear();
+        
+        // Note: We could also delete the user from backend here if we had a DELETE endpoint
+        // await ApiService.deleteUser(userId);
+        
+        // Redirect to setup
         window.location.href = 'popup.html';
-      });
+      } catch (error) {
+        console.error('Error resetting preferences:', error);
+        alert('Error resetting preferences. Please try again.');
+      }
     }
   });
-}
-
-// Snap slider value to one of 3 discrete levels
-function snapToLevel(value) {
-  // 0 = No Summary, 1 = Medium Summary, 2 = Full Summary
-  if (value < 1) return 0;
-  if (value > 1) return 2;
-  return 1;
-}
-
-function updateSummaryLabel(value) {
-  const label = document.getElementById('summaryLevel');
-  const levelValue = snapToLevel(value);
-  
-  switch(levelValue) {
-    case 0:
-      label.textContent = '📖 No Summary (Full Article)';
-      label.style.color = '#10b981';
-      label.style.borderColor = '#10b981';
-      break;
-    case 1:
-      label.textContent = '📝 Medium Summary';
-      label.style.color = '#667eea';
-      label.style.borderColor = '#667eea';
-      break;
-    case 2:
-      label.textContent = '⚡ Brief Summary';
-      label.style.color = '#764ba2';
-      label.style.borderColor = '#764ba2';
-      break;
-  }
 }
