@@ -1,51 +1,119 @@
-// Handle profession selection
-document.addEventListener('DOMContentLoaded', function() {
-  const professionButtons = document.querySelectorAll('.profession-btn');
-  const selectedProfessionDiv = document.getElementById('selectedProfession');
-  const currentProfessionSpan = document.getElementById('currentProfession');
+let selectedProfession = null;
+let selectedInterests = [];
+
+// Screen 1: Profession Selection
+document.querySelectorAll('.profession-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    // Remove selected class from all buttons
+    document.querySelectorAll('.profession-btn').forEach(b => b.classList.remove('selected'));
+    
+    // Add selected class to clicked button
+    this.classList.add('selected');
+    selectedProfession = this.dataset.profession;
+    
+    // Show selected profession
+    document.getElementById('selectedProfession').style.display = 'block';
+    document.getElementById('currentProfession').textContent = selectedProfession;
+  });
+});
+
+// Next button - go to interests screen
+document.getElementById('nextToProfession').addEventListener('click', function() {
+  if (!selectedProfession) {
+    alert('Please select a profession first');
+    return;
+  }
   
-  // Load saved profession on popup open
-  chrome.storage.sync.get(['profession'], function(result) {
-    if (result.profession) {
-      // Show which profession is currently selected
-      professionButtons.forEach(btn => {
-        if (btn.dataset.profession === result.profession) {
-          btn.classList.add('selected');
-        }
-      });
-      
-      // Show the selected profession message
-      currentProfessionSpan.textContent = result.profession;
-      selectedProfessionDiv.style.display = 'block';
-    }
+  showInterestsScreen(selectedProfession);
+});
+
+// Back button - return to profession screen
+document.getElementById('backBtn').addEventListener('click', function() {
+  document.getElementById('interestScreen').style.display = 'none';
+  document.getElementById('professionScreen').style.display = 'block';
+});
+
+// Function to display interests screen
+function showInterestsScreen(profession) {
+  const questions = professionQuestions[profession];
+  
+  if (!questions) {
+    console.error('No questions found for profession:', profession);
+    return;
+  }
+  
+  // Update title
+  document.getElementById('interestTitle').textContent = questions.title;
+  
+  // Clear previous interests
+  const interestGrid = document.getElementById('interestGrid');
+  interestGrid.innerHTML = '';
+  
+  // Create interest buttons
+  questions.options.forEach((option, index) => {
+    const btn = document.createElement('button');
+    btn.className = 'interest-btn';
+    btn.dataset.index = index;
+    btn.dataset.tags = JSON.stringify(option.tags);
+    
+    btn.innerHTML = `
+      <span class="icon">${option.icon}</span>
+      <span class="title">${option.text}</span>
+    `;
+    
+    // Toggle selection
+    btn.addEventListener('click', function() {
+      this.classList.toggle('selected');
+      updateSelectedInterests();
+    });
+    
+    interestGrid.appendChild(btn);
   });
   
-  // Handle button clicks
-  professionButtons.forEach(button => {
-    button.addEventListener('click', function() {
-      const profession = this.dataset.profession;
-      
-      // Remove selected class from all buttons
-      professionButtons.forEach(btn => btn.classList.remove('selected'));
-      
-      // Add selected class to clicked button
-      this.classList.add('selected');
-      
-      // Save to Chrome storage
-      chrome.storage.sync.set({ profession: profession }, function() {
-        console.log('Profession saved:', profession);
-        
-        // Update the display
-        currentProfessionSpan.textContent = profession;
-        selectedProfessionDiv.style.display = 'block';
-        
-        // Optional: Show a brief confirmation
-        const originalText = currentProfessionSpan.textContent;
-        currentProfessionSpan.textContent = profession + ' ✓';
-        setTimeout(() => {
-          currentProfessionSpan.textContent = originalText;
-        }, 1000);
-      });
+  // Hide profession screen, show interest screen
+  document.getElementById('professionScreen').style.display = 'none';
+  document.getElementById('interestScreen').style.display = 'block';
+}
+
+// Update selected interests array
+function updateSelectedInterests() {
+  selectedInterests = [];
+  document.querySelectorAll('.interest-btn.selected').forEach(btn => {
+    selectedInterests.push({
+      text: btn.querySelector('.title').textContent,
+      tags: JSON.parse(btn.dataset.tags)
     });
   });
+  console.log('Selected interests:', selectedInterests);
+}
+
+// Save preferences
+document.getElementById('savePreferences').addEventListener('click', function() {
+  if (selectedInterests.length === 0) {
+    alert('Please select at least one interest');
+    return;
+  }
+  
+  // Save to Chrome storage
+  chrome.storage.sync.set({
+    profession: selectedProfession,
+    interests: selectedInterests
+  }, function() {
+    console.log('Preferences saved!');
+    alert('Preferences saved successfully!');
+    
+    // You can close the popup or show a success message
+    // window.close();
+  });
+});
+
+// Load saved preferences on popup open
+chrome.storage.sync.get(['profession', 'interests'], function(result) {
+  if (result.profession) {
+    selectedProfession = result.profession;
+    // You can auto-select the profession button if needed
+  }
+  if (result.interests) {
+    selectedInterests = result.interests;
+  }
 });
