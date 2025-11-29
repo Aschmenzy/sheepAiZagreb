@@ -96,6 +96,42 @@
         <button class="skip-button" id="skipAdditional">Skip</button>
       </div>
     </div>
+
+    <!-- SCREEN 4: QR Code for Telegram -->
+    <div class="screen" id="QRCodeScreen" style="display: none;">
+      <div class="header">
+        <h1>📱 Connect Telegram Bot</h1>
+        <p class="subtitle">Get notifications for new articles</p>
+      </div>
+      
+      <div class="content">
+        <p class="description">Scan this QR code with your phone to connect your Telegram account</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <div id="qrCodeContainer" style="display: inline-block; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <!-- QR code will be inserted here -->
+          </div>
+        </div>
+        
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p style="margin: 0; font-size: 14px; color: #166534;">
+            <strong>📲 How to connect:</strong><br>
+            1. Open Telegram on your phone<br>
+            2. Scan this QR code<br>
+            3. Press "Start" in the bot chat
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+          <p style="font-size: 13px; color: #718096;">
+            Your User ID: <strong id="displayUserId" style="color: #667eea;">-</strong>
+          </p>
+        </div>
+        
+        <button class="next-button" id="finishSetup">Finish Setup</button>
+        <button class="skip-button" id="skipTelegram">Skip for Now</button>
+      </div>
+    </div>
   </div>
   
     <script src="js/professionQuestions.js"></script>

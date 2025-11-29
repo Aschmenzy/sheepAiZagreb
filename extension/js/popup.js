@@ -136,14 +136,24 @@ function initializeEventListeners() {
     document.getElementById('interestScreen').style.display = 'block';
   });
 
-  // Skip additional interests
+  // Skip additional interests - go to QR code screen
   document.getElementById('skipAdditional').addEventListener('click', function() {
     saveAllPreferences();
   });
 
-  // Save preferences button
+  // Save preferences button - go to QR code screen
   document.getElementById('savePreferences').addEventListener('click', function() {
     saveAllPreferences();
+  });
+
+  // Finish setup button - complete setup
+  document.getElementById('finishSetup').addEventListener('click', function() {
+    completeSetup();
+  });
+
+  // Skip Telegram button - complete setup without Telegram
+  document.getElementById('skipTelegram').addEventListener('click', function() {
+    completeSetup();
   });
 }
 
@@ -268,7 +278,7 @@ function updateAdditionalInterests() {
   console.log('Additional interests:', selectedAdditionalInterests);
 }
 
-// Save all preferences and send to backend
+// Save all preferences and show QR code screen
 async function saveAllPreferences() {
   const allInterestIds = [...selectedPrimaryInterests, ...selectedAdditionalInterests];
   
@@ -292,9 +302,8 @@ async function saveAllPreferences() {
       userId = result.userId;
     }
     
-    // Save to Chrome storage
+    // Save to Chrome storage (but don't mark as complete yet)
     await chrome.storage.sync.set({
-      setupComplete: true,
       userId: userId,
       profession: selectedProfession,
       interestIds: allInterestIds
@@ -305,14 +314,98 @@ async function saveAllPreferences() {
     console.log('Profession:', selectedProfession);
     console.log('Interest IDs:', allInterestIds);
     
-    // Redirect to main screen
-    window.location.href = 'main.html';
+    // Show QR code screen
+    showQRCodeScreen();
     
   } catch (error) {
     console.error('Error saving preferences:', error);
     showError(error.message || 'Failed to save preferences. Make sure the backend is running on http://127.0.0.1:5000');
   } finally {
     showLoading(false);
+  }
+}
+
+// Show QR code screen
+function showQRCodeScreen() {
+  // Hide additional screen
+  document.getElementById('additionalScreen').style.display = 'none';
+  
+  // Show QR code screen
+  document.getElementById('QRCodeScreen').style.display = 'block';
+  
+  // Display user ID
+  document.getElementById('displayUserId').textContent = userId;
+  
+  // Generate QR code
+  generateQRCode(userId);
+}
+
+// Simple QR Code generator function
+function generateQRCode(userId) {
+  const telegramBotLink = `https://t.me/SlipItBot?start=${userId}`;
+  const qrContainer = document.getElementById('qrCodeContainer');
+  
+  console.log('Generating QR Code for:', telegramBotLink);
+  
+  // Use QR Server API (free, reliable, no rate limits)
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(telegramBotLink)}`;
+  
+  qrContainer.innerHTML = `
+    <img src="${qrCodeUrl}" 
+         alt="QR Code" 
+         style="width: 250px; height: 250px; display: block; border-radius: 8px;"
+         onerror="handleQRError(this)">
+    <div style="margin-top: 12px; text-align: center;">
+      <a href="${telegramBotLink}" 
+         target="_blank" 
+         style="color: #667eea; font-size: 13px; text-decoration: none; font-weight: 600;">
+        📱 Or click here to open Telegram
+      </a>
+    </div>
+  `;
+}
+
+// Handle QR code loading error
+window.handleQRError = function(img) {
+  console.error('QR code failed to load, showing fallback');
+  const telegramBotLink = `https://t.me/SlipItBot?start=${userId}`;
+  
+  img.parentElement.innerHTML = `
+    <div style="text-align: center; padding: 40px 20px;">
+      <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+      <p style="color: #667eea; font-weight: 600; margin-bottom: 12px;">
+        Click the link below to connect:
+      </p>
+      <a href="${telegramBotLink}" 
+         target="_blank" 
+         style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; 
+                font-weight: 600; margin-top: 8px;">
+        Open Telegram Bot
+      </a>
+      <p style="font-size: 12px; color: #718096; margin-top: 16px; word-break: break-all;">
+        ${telegramBotLink}
+      </p>
+    </div>
+  `;
+};
+
+// Complete setup and go to main dashboard
+async function completeSetup() {
+  try {
+    // Mark setup as complete
+    await chrome.storage.sync.set({
+      setupComplete: true
+    });
+    
+    console.log('Setup completed!');
+    
+    // Redirect to main dashboard
+    window.location.href = 'main.html';
+    
+  } catch (error) {
+    console.error('Error completing setup:', error);
+    showError('Failed to complete setup. Please try again.');
   }
 }
 
