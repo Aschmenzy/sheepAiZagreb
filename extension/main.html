@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hacker News Modifier - Dashboard</title>
+  <link rel="stylesheet" href="css/popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="screen" id="mainScreen">
+      <div class="header">
+        <h1>🚀 Hacker News Modifier</h1>
+        <p class="subtitle">Your personalized feed is ready!</p>
+      </div>
+      
+      <div class="content">
+        <div class="dashboard-section">
+          <h2>Your Profile</h2>
+          <div class="profile-card">
+            <div class="profile-item">
+              <span class="label">Profession:</span>
+              <span class="value" id="dashboardProfession">-</span>
+            </div>
+            <div class="profile-item">
+              <span class="label">Interests:</span>
+              <span class="value" id="dashboardInterestCount">0 selected</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h2>Your Interests</h2>
+          <div class="tags-container" id="dashboardTags">
+            <!-- Interest tags will be displayed here -->
+          </div>
+        </div>
+
+        <div class="dashboard-actions">
+          <button class="action-button primary" id="viewFiltered">
+            View Filtered News
+          </button>
+          <button class="action-button secondary" id="editPreferences">
+            Edit Preferences
+          </button>
+          <button class="action-button secondary" id="resetPreferences">
+            Reset All
+          </button>
+        </div>
+
+        <div class="dashboard-info">
+          <p>💡 Visit <strong>thehackernews.com</strong> to see your personalized content!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/main.js"></script>
+</body>
+</html>

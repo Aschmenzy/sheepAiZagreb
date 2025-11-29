@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <!-- SCREEN 2: Interest Selection -->
+    <!-- SCREEN 2: Primary Interest Selection -->
     <div class="screen" id="interestScreen" style="display: none;">
       <div class="header">
         <button class="back-btn" id="backBtn">← Back</button>
@@ -67,18 +67,38 @@
       </div>
       
       <div class="content">
-        <p class="description">Choose multiple interests</p>
+        <p class="description">Choose your primary interests</p>
         
         <div class="interest-grid" id="interestGrid">
           <!-- Interest options will be dynamically inserted here -->
         </div>
         
+        <button class="next-button" id="nextToAdditional">Next</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Additional Interests -->
+    <div class="screen" id="additionalScreen" style="display: none;">
+      <div class="header">
+        <button class="back-btn" id="backFromAdditional">← Back</button>
+        <h1>Additional Interests</h1>
+        <p class="subtitle">Explore topics from other areas</p>
+      </div>
+      
+      <div class="content">
+        <p class="description">Optional: Select any other topics that interest you</p>
+        
+        <div class="additional-interests-container" id="additionalContainer">
+          <!-- Additional interest categories will be dynamically inserted here -->
+        </div>
+        
         <button class="next-button" id="savePreferences">Save Preferences</button>
+        <button class="skip-button" id="skipAdditional">Skip</button>
       </div>
     </div>
   </div>
   
-  <script src="professionQuestions.js"></script>
-  <script src="popup.js"></script>
+  <script src="js/professionQuestions.js"></script>
+  <script src="js/popup.js"></script>
 </body>
 </html>

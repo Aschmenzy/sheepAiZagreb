@@ -244,3 +244,102 @@ body::-webkit-scrollbar-thumb {
 body::-webkit-scrollbar-thumb:hover {
   background: #764ba2;
 }
+
+/* Skip button */
+.skip-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 24px;
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.skip-button:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Additional interests container */
+.additional-interests-container {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.additional-category {
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.category-header {
+  background: #f7fafc;
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.category-header:hover {
+  background: #edf2f7;
+}
+
+.category-title {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 15px;
+}
+
+.toggle-icon {
+  color: #667eea;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.additional-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 16px;
+  background: white;
+}
+
+.interest-btn.small {
+  padding: 12px 10px;
+}
+
+.interest-btn.small .icon {
+  font-size: 24px;
+}
+
+.interest-btn.small .title {
+  font-size: 12px;
+}
+
+/* Scrollbar for additional interests */
+.additional-interests-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.additional-interests-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.additional-interests-container::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 3px;
+}
+
+.additional-interests-container::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
