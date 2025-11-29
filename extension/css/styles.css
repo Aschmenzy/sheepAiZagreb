@@ -21,8 +21,21 @@
   color: #856404;
 }
 
-/* Reading time label */
-.reading-time {
+/* Reading time label - inline style for homepage */
+.item-label .reading-time {
+  background-color: #e7f3ff;
+  color: #0066cc;
+  padding: 4px 8px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Reading time label - block style for article pages */
+.body-post + .reading-time,
+.reading-time:not(.item-label .reading-time) {
   background-color: #e7f3ff;
   color: #0066cc;
   padding: 8px 12px;
@@ -47,5 +60,3 @@
 body {
   line-height: 1.6;
 }
-
-
