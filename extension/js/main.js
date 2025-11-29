@@ -85,30 +85,41 @@ function initializeEventListeners() {
     }
   });
   
-  // Summary slider
+  // Summary slider - FIXED VERSION
   const summarySlider = document.getElementById('summarySlider');
   const summaryLevel = document.getElementById('summaryLevel');
   
   summarySlider.addEventListener('input', function() {
-    const value = this.value;
-    let level = 'Medium Summary';
+    const value = parseInt(this.value); // Parse as integer since slider is 0-2
+    let levelText = 'Medium Summary';
+    let emoji = '📝';
     
-    if (value < 33) {
-      level = 'Full Articles';
-    } else if (value > 66) {
-      level = 'Brief Summary';
+    if (value === 0) {
+      levelText = 'Full Articles';
+      emoji = '📄';
+    } else if (value === 1) {
+      levelText = 'Medium Summary';
+      emoji = '📝';
+    } else if (value === 2) {
+      levelText = 'Brief Summary';
+      emoji = '⚡';
     }
     
-    summaryLevel.textContent = level;
+    summaryLevel.textContent = `${emoji} ${levelText}`;
     
     // Save summary preference
     chrome.storage.sync.set({ summaryLevel: value });
+    console.log('Summary level saved:', value, levelText);
   });
   
   // Load saved summary level
   chrome.storage.sync.get(['summaryLevel'], function(result) {
-    if (result.summaryLevel) {
+    if (result.summaryLevel !== undefined) {
       summarySlider.value = result.summaryLevel;
+      summarySlider.dispatchEvent(new Event('input'));
+    } else {
+      // Default to medium (value 1)
+      summarySlider.value = 1;
       summarySlider.dispatchEvent(new Event('input'));
     }
   });

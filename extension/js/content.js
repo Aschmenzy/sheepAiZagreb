@@ -112,7 +112,7 @@ async function applyArticleSummary() {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   `;
   
-  // Show loading state
+  // Show loading state - FIXED: Check for level 2 first
   summaryContainer.innerHTML = `
     <div style="display: flex; align-items: center; gap: 12px;">
       <div style="
@@ -124,7 +124,7 @@ async function applyArticleSummary() {
         animation: spin 1s linear infinite;
       "></div>
       <div style="color: #667eea; font-weight: 600;">
-        ${summaryLevel === 1 ? '📝 Generating Medium Summary...' : '⚡ Generating Brief Summary...'}
+        ${summaryLevel === 2 ? '⚡ Generating Brief Summary...' : '📝 Generating Medium Summary...'}
       </div>
     </div>
     <style>
@@ -143,12 +143,12 @@ async function applyArticleSummary() {
     const summary = await generateArticleSummary(articleContent, articleTitle, summaryLevel);
     articleSummary = summary;
     
-    // Update container with summary
+    // Update container with summary - FIXED: Check for level 2 first
     summaryContainer.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-        <span style="font-size: 24px;">${summaryLevel === 1 ? '📝' : '⚡'}</span>
+        <span style="font-size: 24px;">${summaryLevel === 2 ? '⚡' : '📝'}</span>
         <h3 style="margin: 0; color: #667eea; font-size: 18px; font-weight: 700;">
-          ${summaryLevel === 1 ? 'Medium Summary' : 'Brief Summary'}
+          ${summaryLevel === 2 ? 'Brief Summary' : 'Medium Summary'}
         </h3>
       </div>
       <div style="color: #2d3748; line-height: 1.8; font-size: 15px;">
@@ -241,7 +241,7 @@ async function applyArticleSummary() {
   }
 }
 
-// Generate article summary using GPT
+// Generate article summary using GPT - FIXED: Check level 2 first
 async function generateArticleSummary(content, title, level) {
   const apiKey = CONFIG.OPENAI_API_KEY;
   
@@ -249,12 +249,26 @@ async function generateArticleSummary(content, title, level) {
     throw new Error('Please add your OpenAI API key to config.js');
   }
   
-  // Determine summary instructions based on level
+  // Determine summary instructions based on level - FIXED ORDER
   let summaryInstructions;
   let maxTokens;
   
-  if (level === 1) {
-    // Medium summary
+  if (level === 2) {
+    // Brief summary (level === 2)
+    summaryInstructions = `Create a concise summary (approximately 50-75 words).
+
+Focus on the absolute most important information.
+
+FORMATTING REQUIREMENTS:
+- Use <strong> tags to highlight the most critical terms and key points
+- Use bullet points (<ul><li>) if there are multiple key points (2-3 max)
+- If it's a single topic, use a short paragraph with highlighted key terms
+- Make the most important information stand out visually
+
+Be concise but make sure key information is highlighted with <strong> tags.`;
+    maxTokens = 250;
+  } else {
+    // Medium summary (level === 1)
     summaryInstructions = `Create a well-formatted summary of this article (approximately 150-200 words).
 
 Structure your response as:
@@ -278,20 +292,6 @@ Example structure:
 </ul>
 <p>Conclusion with <strong>implications</strong>...</p>`;
     maxTokens = 500;
-  } else {
-    // Brief summary (level === 2)
-    summaryInstructions = `Create a concise summary (approximately 50-75 words).
-
-Focus on the absolute most important information.
-
-FORMATTING REQUIREMENTS:
-- Use <strong> tags to highlight the most critical terms and key points
-- Use bullet points (<ul><li>) if there are multiple key points (2-3 max)
-- If it's a single topic, use a short paragraph with highlighted key terms
-- Make the most important information stand out visually
-
-Be concise but make sure key information is highlighted with <strong> tags.`;
-    maxTokens = 250;
   }
   
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -930,8 +930,7 @@ async function filterArticles() {
     
     const recommendedLinks = new Set(articles.map(a => normalizeUrl(a.link)));
     console.log('10. Recommended links (normalized):', Array.from(recommendedLinks).slice(0, 3));
-    console.log('10. Recommended links (normalized):', Array.from(recommendedLinks).slice(0, 3));
-console.log('10b. ALL recommended links:', Array.from(recommendedLinks)); // ADD THIS LINE
+    console.log('10b. ALL recommended links:', Array.from(recommendedLinks));
 
     const allLinks = document.querySelectorAll('a.story-link');
     console.log('11. Total story links found on page:', allLinks.length);
@@ -1009,6 +1008,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   addReadingTime();
   styleExternalLinks();
 
+  // Run article filtering on homepage
   filterArticles();
   
   // Apply article summary if on article page
