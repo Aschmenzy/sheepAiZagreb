@@ -235,6 +235,8 @@ def get_articles():
             "link": "https://...",
             "category": "Cyber Attack",
             "subcategory": "Ransomware",
+            "date": "Nov 24, 2025",
+            "imageUrl": "https://...",
             "relevance_score": 85.5,
             "job_score": 75.0,
             "interest_score": 90.0
@@ -278,6 +280,8 @@ def get_articles():
             a.link,
             a.category,
             a.subcategory,
+            a.date,
+            a.imageUrl,
             ajs.score as job_score,
             COALESCE(AVG(ais.score), 0) as avg_interest_score,
             (ajs.score * 0.4 + COALESCE(AVG(ais.score), 0) * 0.6) as relevance_score
@@ -295,7 +299,7 @@ def get_articles():
             params.extend(user_interest_ids)
         
         query += """
-        GROUP BY a.id, a.title, a.summary, a.link, a.category, a.subcategory, ajs.score
+        GROUP BY a.id, a.title, a.summary, a.link, a.category, a.subcategory, a.date, a.imageUrl, ajs.score
         ORDER BY relevance_score DESC
         LIMIT ?;
         """

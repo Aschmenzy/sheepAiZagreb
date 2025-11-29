@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS articles (
     summary     TEXT,
     category    TEXT,
     subcategory TEXT,
-    article     INTEGER NOT NULL DEFAULT 0
+    article     INTEGER NOT NULL DEFAULT 0,
+    date        TEXT,
+    imageUrl    TEXT
 );
 
 CREATE TABLE IF NOT EXISTS interests (
@@ -61,7 +63,7 @@ CREATE TABLE IF NOT EXISTS interests (
     'Web Technologies & Frameworks'
   ))
 );
-INSERT INTO interests (id, name) VALUES
+INSERT OR IGNORE INTO interests (id, name) VALUES
   -- Security Engineer
   (1, 'Vulnerability Research & Exploit Development'),
   (2, 'Application Security & Secure Coding'),
@@ -154,10 +156,4 @@ CREATE TABLE IF NOT EXISTS article_interest_scores (
   FOREIGN KEY (article_id)  REFERENCES articles(id)  ON DELETE CASCADE,
   FOREIGN KEY (interest_id) REFERENCES interests(id) ON DELETE CASCADE
 );
-
-INSERT INTO users (id, job)
-VALUES (1, 'Software Developer');
-
-INSERT INTO user_interests (user_id, interest_id)
-VALUES (1, 3), (1, 8), (1, 12);
 

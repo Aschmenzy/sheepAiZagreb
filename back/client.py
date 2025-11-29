@@ -100,6 +100,9 @@ def get_articles(user_id: int, limit: int = 10):
             print(f"\n{i}. {article['title']}")
             print(f"   Link: {article['link']}")
             print(f"   Category: {article.get('category', 'N/A')} / {article.get('subcategory', 'N/A')}")
+            print(f"   Date: {article.get('date', 'N/A')}")
+            if article.get('imageUrl'):
+                print(f"   Image: {article['imageUrl']}")
             print(f"   Relevance Score: {article['relevance_score']}")
             print(f"   Job Score: {article['job_score']}")
             print(f"   Interest Score: {article['avg_interest_score']}")
