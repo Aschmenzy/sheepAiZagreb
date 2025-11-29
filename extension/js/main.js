@@ -125,10 +125,12 @@ function initializeEventListeners() {
   });
   
   // View Filtered News button
-  document.getElementById('viewFiltered').addEventListener('click', function() {
-    // Open thehackernews.com
-    chrome.tabs.create({ url: 'https://thehackernews.com' });
+document.getElementById('viewFiltered').addEventListener('click', function() {
+  // Navigate current tab to thehackernews.com
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.update(tabs[0].id, {url: 'https://thehackernews.com'});
   });
+});
   
   // Chat with AI button
   document.getElementById('chatWithAI').addEventListener('click', function() {

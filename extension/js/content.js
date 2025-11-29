@@ -894,98 +894,161 @@ async function filterArticles() {
                      window.location.pathname === '' ||
                      window.location.href === 'https://thehackernews.com/';
   
-  console.log('1. Is homepage?', isHomepage);
-  console.log('2. Current pathname:', window.location.pathname);
-  console.log('3. Current href:', window.location.href);
-  
   if (!isHomepage) {
     console.log('❌ Not homepage, exiting filter');
     return;
   }
   
   const stored = await chrome.storage.sync.get(['userId']);
-  console.log('4. Stored data:', stored);
-  console.log('5. userId:', stored.userId);
+  console.log('userId:', stored.userId);
   
   if (!stored.userId) {
-    console.log('❌ No userId found, exiting filter');
+    console.log('❌ No userId found');
     return;
   }
   
-  // Define normalizeUrl BEFORE the try block
-  const normalizeUrl = (url) => {
-    return url.split('?')[0].replace(/\/$/, '');
-  };
-  
   try {
     const apiUrl = `http://127.0.0.1:5000/articles?userId=${stored.userId}&limit=50`;
-    console.log('6. Fetching from:', apiUrl);
+    console.log('Fetching from:', apiUrl);
     
     const response = await fetch(apiUrl);
-    console.log('7. Response status:', response.status);
-    
     const articles = await response.json();
-    console.log('8. Articles received:', articles.length);
-    console.log('9. First article:', articles[0]);
+    console.log('Articles received:', articles.length);
     
-    const recommendedLinks = new Set(articles.map(a => normalizeUrl(a.link)));
-    console.log('10. Recommended links (normalized):', Array.from(recommendedLinks).slice(0, 3));
-    console.log('10b. ALL recommended links:', Array.from(recommendedLinks));
-
-    const allLinks = document.querySelectorAll('a.story-link');
-    console.log('11. Total story links found on page:', allLinks.length);
-    
-    if (allLinks.length === 0) {
-      console.log('❌ No story links found! Selector might be wrong.');
-      console.log('Available link classes:', Array.from(document.querySelectorAll('a')).slice(0, 5).map(a => a.className));
+    // Find the container
+    const blogPosts = document.querySelector('.blog-posts');
+    if (!blogPosts) {
+      console.log('❌ Blog posts container not found');
+      return;
     }
     
-    let shownCount = 0;
-    let hiddenCount = 0;
-
-    allLinks.forEach((link, index) => {
-      const normalizedHref = normalizeUrl(link.href);
-      const isRecommended = recommendedLinks.has(normalizedHref);
+    // Remove ALL existing articles
+    const existingArticles = blogPosts.querySelectorAll('.body-post');
+    existingArticles.forEach(article => article.remove());
+    console.log('Removed', existingArticles.length, 'existing articles');
+    
+    // Create new articles from API
+    articles.forEach((article, index) => {
+      const articleHtml = `
+        <div class="body-post clear">
+          <a class="story-link" href="${article.link}">
+            <div class="clear home-post-box cf">
+              <div class="home-img clear">
+                <div class="img-ratio">
+                  <img alt="${article.title}" 
+                       class="home-img-src loaded" 
+                       decoding="async" 
+                       height="380" 
+                       src="${article.imageUrl}"
+                       data-article-url="${article.link}"
+                       data-article-index="${index}"
+                       width="728">
+                </div>
+              </div>
+              <div class="clear home-right">
+                <h2 class="home-title">${article.title}</h2>
+                <div class="item-label">
+                  <div class="reading-time">📖 3 min read</div>
+                  <span class="h-datetime"><i class="icon-font icon-calendar"></i>${article.date}</span>
+                  <span class="h-tags">${article.category} / ${article.subcategory}</span>
+                </div>
+                <div class="home-desc">${article.summary}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      `;
       
-      if (index < 3) {
-        console.log(`12. Link ${index}: ${normalizedHref} - Recommended: ${isRecommended}`);
-      }
-      
-      if (isRecommended) {
-        link.style.display = '';
-        shownCount++;
-      } else {
-        link.style.display = 'none';
-        hiddenCount++;
-        const section = link.closest('section.body-post');
-        if (section) section.style.display = 'none';
-      }
+      blogPosts.insertAdjacentHTML('beforeend', articleHtml);
     });
     
-    console.log('13. Shown:', shownCount, 'Hidden:', hiddenCount);
+    console.log('Created', articles.length, 'new personalized articles');
+    
+    // Now fetch real images for each article
+    // Now fetch real images AND calculate reading time for each article
+const images = blogPosts.querySelectorAll('.home-img-src');
+images.forEach(async (img) => {
+  const articleUrl = img.getAttribute('data-article-url');
+  const index = img.getAttribute('data-article-index');
+  
+  try {
+    console.log(`Fetching data for article ${index}...`);
+    const articleResponse = await fetch(articleUrl);
+    const html = await articleResponse.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // === FETCH IMAGE ===
+    let realImageUrl = null;
+    
+    // Method 1: Try og:image meta tag (most reliable)
+    const metaImg = doc.querySelector('meta[property="og:image"]');
+    if (metaImg && metaImg.content) {
+      realImageUrl = metaImg.content;
+    }
+    
+    // Method 2: Find blogger.googleusercontent.com images (skip base64)
+    if (!realImageUrl) {
+      const allImages = doc.querySelectorAll('img');
+      for (const imgEl of allImages) {
+        const src = imgEl.src || imgEl.getAttribute('src');
+        if (src && src.includes('blogger.googleusercontent.com') && !src.startsWith('data:')) {
+          realImageUrl = src;
+          break;
+        }
+      }
+    }
+    
+    // Update the image
+    if (realImageUrl && !realImageUrl.startsWith('data:')) {
+      img.src = realImageUrl;
+      console.log(`✅ Updated image ${index}`);
+    }
+    
+    // === CALCULATE READING TIME ===
+    const articleBody = doc.querySelector('.articlebody');
+    let readingTime = 3; // default
+    
+    if (articleBody) {
+      const paragraphs = articleBody.querySelectorAll('p');
+      let totalText = '';
+      paragraphs.forEach(p => {
+        totalText += p.textContent + ' ';
+      });
+      
+      const wordCount = totalText.trim().split(/\s+/).length;
+      readingTime = Math.ceil(wordCount / 200);
+      console.log(`📖 Article ${index}: ${wordCount} words = ${readingTime} min read`);
+    }
+    
+    // Update reading time in the DOM
+    const articleContainer = img.closest('.body-post');
+    const readingTimeEl = articleContainer.querySelector('.reading-time');
+    if (readingTimeEl) {
+      readingTimeEl.textContent = `📖 ${readingTime} min read`;
+    }
+    
+  } catch (error) {
+    console.error(`❌ Error fetching data for article ${index}:`, error);
+  }
+});
     
     // Add banner
     const banner = document.createElement('div');
     banner.id = 'filter-banner';
     banner.style.cssText = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-align: center; padding: 12px; font-weight: 600; position: sticky; top: 0; z-index: 9998;';
-    banner.innerHTML = `✨ Personalized Feed: Showing ${articles.length} articles <button id="disable-filter" style="margin-left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Show All</button>`;
+    banner.innerHTML = `✨ Personalized Feed: Showing ${articles.length} articles tailored for you <button id="disable-filter" style="margin-left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Reload Page</button>`;
     document.body.insertBefore(banner, document.body.firstChild);
     
-    console.log('14. Banner added');
-    
     document.getElementById('disable-filter').onclick = () => {
-      document.querySelectorAll('a.story-link, section.body-post').forEach(el => el.style.display = '');
-      banner.remove();
-      console.log('15. Filter disabled');
+      location.reload();
     };
     
-    console.log('=== FILTER ARTICLES DEBUG END ===');
+    console.log('=== FILTER COMPLETE ===');
   } catch (error) {
     console.error('❌ Filter error:', error);
-    console.error('Error stack:', error.stack);
   }
 }
-
 // Listen for messages from background script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "explainText") {
