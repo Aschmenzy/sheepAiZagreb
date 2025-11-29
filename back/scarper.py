@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from pathlib import Path
 
 from scoring import get_all_scores_from_ollama, get_summary_from_ollama
+from bot import notify_new_article
 
 BASE_URL = "https://thehackernews.com"
 START_URL = "https://thehackernews.com/search?max-results=120&start=1"
@@ -50,7 +51,7 @@ def link_exists(conn: sqlite3.Connection, link: str) -> bool:
 def save_article(conn: sqlite3.Connection, article: dict):
     """
     article dict keys:
-      link, title, full_text, category, subcategory, article (bool/int)
+      link, title, full_text, category, subcategory, article (bool/int), date, imageUrl
     """
     cur = conn.cursor()
     
@@ -65,12 +66,12 @@ def save_article(conn: sqlite3.Connection, article: dict):
         print(f"Generating summary...")
         summary = get_summary_from_ollama(article_text)
     
-    # Insert article with summary
+    # Insert article with summary, date, and imageUrl
     cur.execute(
         """
         INSERT OR IGNORE INTO articles
-            (link, title, full_text, summary, category, subcategory, article)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
+            (link, title, full_text, summary, category, subcategory, article, date, imageUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         """,
         (
             article["link"],
@@ -80,6 +81,8 @@ def save_article(conn: sqlite3.Connection, article: dict):
             article["category"],
             article["subcategory"],
             1 if article["article"] else 0,
+            article.get("date"),
+            article.get("imageUrl"),
         ),
     )
     
@@ -139,6 +142,16 @@ def save_article(conn: sqlite3.Connection, article: dict):
             )
         
         print(f"Finished scoring article {article_id}")
+        
+        # Send Telegram notification after scoring is complete
+        try:
+            notify_new_article(
+                link=article["link"],
+                title=article["title"],
+                summary=summary
+            )
+        except Exception as e:
+            print(f"Warning: Failed to send Telegram notification: {e}")
     else:
         print(f"Warning: Article {article_id} has insufficient text for scoring")
     
@@ -235,6 +248,23 @@ def extract_full_text(article_url: str) -> dict:
     else:
         article_flag = False  # not found
 
+    # ---- NEW: Extract date from span.p-author ----
+    date = None
+    author_span = soup.find("span", class_="p-author")
+    if author_span:
+        # Find the span with class="author" that contains the date
+        date_span = author_span.find("span", class_="author")
+        if date_span:
+            date = date_span.get_text(strip=True)
+
+    # ---- NEW: Extract imageUrl from div.separator ----
+    imageUrl = None
+    separator_div = soup.find("div", class_="separator")
+    if separator_div:
+        img_tag = separator_div.find("img")
+        if img_tag and img_tag.get("src"):
+            imageUrl = img_tag["src"]
+
     return {
         "title": title,
         "link": article_url,
@@ -242,6 +272,8 @@ def extract_full_text(article_url: str) -> dict:
         "category": category,
         "subcategory": subcategory,
         "article": article_flag,
+        "date": date,
+        "imageUrl": imageUrl,
     }
 
 
