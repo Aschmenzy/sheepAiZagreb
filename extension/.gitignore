@@ -1,0 +1,19 @@
+# API Keys and Sensitive Files
+config.js
+
+# Keep the example file
+!config.example.js
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log

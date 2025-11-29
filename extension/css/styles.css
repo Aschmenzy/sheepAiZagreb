@@ -61,3 +61,158 @@ body {
   line-height: 1.6;
 }
 
+/* Explanation Side Panel */
+#explanation-panel {
+  position: fixed;
+  top: 0;
+  right: -450px;
+  width: 450px;
+  height: 100vh;
+  background: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+
+#explanation-panel.open {
+  right: 0;
+}
+
+#explanation-panel-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10001;
+}
+
+#explanation-panel-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#explanation-panel-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+#explanation-panel-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#explanation-panel-content {
+  padding: 25px;
+}
+
+.selected-text-box {
+  background: #f8f9fa;
+  border-left: 4px solid #667eea;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.selected-text-box h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.selected-text-box p {
+  margin: 0;
+  font-size: 15px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.explanation-box {
+  background: white;
+  padding: 0;
+}
+
+.explanation-box h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.explanation-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #444;
+}
+
+.explanation-text strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.explanation-text ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.explanation-text li {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.explanation-text p {
+  margin: 12px 0;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.error-box {
+  background: #fee;
+  border-left: 4px solid #d33;
+  padding: 15px;
+  border-radius: 4px;
+  color: #d33;
+}

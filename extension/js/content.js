@@ -156,12 +156,151 @@ function styleExternalLinks() {
   });
 }
 
+// Create the explanation side panel
+function createExplanationPanel() {
+  if (document.getElementById('explanation-panel')) {
+    return;
+  }
+
+  const panel = document.createElement('div');
+  panel.id = 'explanation-panel';
+  panel.innerHTML = `
+    <div id="explanation-panel-header">
+      <h2>🧠 Explain Like I'm 12</h2>
+      <button id="explanation-panel-close">×</button>
+    </div>
+    <div id="explanation-panel-content">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading explanation...</div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(panel);
+  
+  // Close button functionality
+  document.getElementById('explanation-panel-close').addEventListener('click', () => {
+    panel.classList.remove('open');
+  });
+}
+
+// Get the full article text
+function getArticleText() {
+  const articleBody = document.querySelector('.articlebody');
+  if (!articleBody) return '';
+  
+  const paragraphs = articleBody.querySelectorAll('p');
+  let text = '';
+  paragraphs.forEach(p => {
+    text += p.textContent + '\n\n';
+  });
+  
+  return text.trim();
+}
+
+// Call OpenAI API to explain the text
+async function explainWithChatGPT(selectedText, articleContext) {
+  const apiKey = CONFIG.OPENAI_API_KEY;
+  
+  if (!apiKey || apiKey === 'YOUR_OPENAI_API_KEY_HERE') {
+    throw new Error('Please add your OpenAI API key to config.js');
+  }
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that explains technical topics in simple, concise terms. Format your response with HTML: use <strong> for important terms, <ul> and <li> for bullet points, and keep explanations brief (3-4 sentences max). Be clear and direct.'
+        },
+        {
+          role: 'user',
+          content: `Article context:\n${articleContext}\n\nSelected text: "${selectedText}"\n\nExplain this briefly in simple terms with HTML formatting. Use bold for key terms and bullet points where helpful.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 300
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'API request failed');
+  }
+  
+  const data = await response.json();
+  let content = data.choices[0].message.content;
+  
+  // Remove markdown code blocks if present
+  content = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+  
+  return content;
+}
+
+// Show explanation in the side panel
+async function showExplanation(selectedText) {
+  console.log('showExplanation called with text:', selectedText);
+  
+  createExplanationPanel();
+  
+  const panel = document.getElementById('explanation-panel');
+  const content = document.getElementById('explanation-panel-content');
+  
+  console.log('Panel created, showing loading state');
+  
+  // Show loading state
+  content.innerHTML = `
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <div class="loading-text">Thinking...</div>
+    </div>
+  `;
+  
+  // Open the panel
+  panel.classList.add('open');
+  
+  try {
+    // Get article context
+    const articleContext = getArticleText();
+    console.log('Article context length:', articleContext.length);
+    
+    // Get explanation from ChatGPT
+    console.log('Calling ChatGPT...');
+    const explanation = await explainWithChatGPT(selectedText, articleContext);
+    console.log('Got explanation:', explanation);
+    
+    // Display the explanation
+    content.innerHTML = `
+      <div class="selected-text-box">
+        <h3>Selected Text</h3>
+        <p>"${selectedText}"</p>
+      </div>
+      <div class="explanation-box">
+        <h3>Simple Explanation</h3>
+        <div class="explanation-text">${explanation}</div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Error getting explanation:', error);
+    content.innerHTML = `
+      <div class="error-box">
+        <strong>Error:</strong> ${error.message}
+      </div>
+    `;
+  }
+}
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "explainText") {
-    console.log("Explain this text:", request.text);
-    // TODO: Add explanation functionality here
-    alert(`You selected: "${request.text}"\n\nExplanation feature coming soon!`);
+    showExplanation(request.text);
   }
 });
 

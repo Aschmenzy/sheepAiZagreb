@@ -3,7 +3,8 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "explainLikeIm12",
     title: "Explain like I'm 12",
-    contexts: ["selection"]
+    contexts: ["selection"],
+    documentUrlPatterns: ["*://thehackernews.com/2025/*"]
   });
 });
 
