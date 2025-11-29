@@ -19,9 +19,49 @@ document.addEventListener('DOMContentLoaded', function() {
     displayInterestsDropdown(interests);
   });
 
+  // Check if user is on thehackernews.com to show/hide Chat with AI button
+  checkCurrentTab();
+
   // Initialize event listeners
   initializeEventListeners();
 });
+
+// Check current tab and show/hide Chat with AI button accordingly
+function checkCurrentTab() {
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    const chatButton = document.getElementById('chatWithAI');
+    
+    if (tabs[0] && tabs[0].url) {
+      const url = tabs[0].url;
+      // Check if URL matches thehackernews.com/2025/
+      if (url.includes('thehackernews.com/2025/')) {
+        chatButton.style.display = 'block';
+        
+        // Update button text with article title
+        const title = tabs[0].title;
+        if (title) {
+          // Remove " - The Hacker News" or similar suffix
+          const cleanTitle = title.replace(/\s*[-–—]\s*The Hacker News.*$/i, '').trim();
+          
+          // Truncate if too long
+          const maxLength = 50;
+          const displayTitle = cleanTitle.length > maxLength 
+            ? cleanTitle.substring(0, maxLength) + '...' 
+            : cleanTitle;
+          
+          chatButton.innerHTML = `🤖 Chat About: ${displayTitle}`;
+        } else {
+          chatButton.innerHTML = '🤖 Chat with AI About Articles';
+        }
+      } else {
+        chatButton.style.display = 'none';
+      }
+    } else {
+      // If we can't determine the URL, hide the button
+      chatButton.style.display = 'none';
+    }
+  });
+}
 
 function displayInterestsDropdown(interests) {
   const dropdownContent = document.getElementById('dropdownContent');
@@ -88,8 +128,13 @@ function initializeEventListeners() {
 
   // Chat with AI button
   document.getElementById('chatWithAI').addEventListener('click', function() {
-    // Open Claude.ai or your AI chat interface
-    chrome.tabs.create({ url: 'https://claude.ai' });
+    // Send message to content script to open chat panel
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "openChat" });
+        window.close(); // Close the popup
+      }
+    });
   });
 
   // Edit preferences - go back to setup

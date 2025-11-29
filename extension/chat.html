@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat with AI - Hacker News Modifier</title>
+  <link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="header-content">
+        <h1>🤖 Chat with AI</h1>
+        <p class="article-title" id="articleTitle">Loading article...</p>
+      </div>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+      <div class="system-message">
+        <div class="message-icon">ℹ️</div>
+        <div class="message-content">
+          <p><strong>AI Assistant Ready</strong></p>
+          <p>I've read the article and I'm ready to answer your questions about it!</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chat-input-container">
+      <div class="input-wrapper">
+        <textarea 
+          id="chatInput" 
+          placeholder="Ask me anything about this article..."
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="sendBtn">
+          <span class="send-icon">➤</span>
+        </button>
+      </div>
+      <div class="input-hints">
+        Try: "Summarize this article" or "What are the key points?"
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/config.js"></script>
+  <script src="js/chat.js"></script>
+</body>
+</html>
