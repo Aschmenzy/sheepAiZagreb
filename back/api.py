@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 import sqlite3
+from flask_cors import CORS  
 from typing import List, Dict, Any
 
 app = Flask(__name__)
+CORS(app)
 
 DB_PATH = "articles-1.db"
 

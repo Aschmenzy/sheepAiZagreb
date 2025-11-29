@@ -232,9 +232,12 @@ async function applyArticleSummary() {
       </div>
     `;
     
-    document.getElementById('retry-summary-btn').addEventListener('click', function() {
-      applyArticleSummary();
-    });
+    const retryBtn = document.getElementById('retry-summary-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function() {
+        applyArticleSummary();
+      });
+    }
   }
 }
 
@@ -883,6 +886,107 @@ async function getExplanation(selectedText) {
   return content;
 }
 
+// Filter homepage articles based on user preferences
+async function filterArticles() {
+  console.log('=== FILTER ARTICLES DEBUG START ===');
+  
+  const isHomepage = window.location.pathname === '/' || 
+                     window.location.pathname === '' ||
+                     window.location.href === 'https://thehackernews.com/';
+  
+  console.log('1. Is homepage?', isHomepage);
+  console.log('2. Current pathname:', window.location.pathname);
+  console.log('3. Current href:', window.location.href);
+  
+  if (!isHomepage) {
+    console.log('❌ Not homepage, exiting filter');
+    return;
+  }
+  
+  const stored = await chrome.storage.sync.get(['userId']);
+  console.log('4. Stored data:', stored);
+  console.log('5. userId:', stored.userId);
+  
+  if (!stored.userId) {
+    console.log('❌ No userId found, exiting filter');
+    return;
+  }
+  
+  // Define normalizeUrl BEFORE the try block
+  const normalizeUrl = (url) => {
+    return url.split('?')[0].replace(/\/$/, '');
+  };
+  
+  try {
+    const apiUrl = `http://127.0.0.1:5000/articles?userId=${stored.userId}&limit=50`;
+    console.log('6. Fetching from:', apiUrl);
+    
+    const response = await fetch(apiUrl);
+    console.log('7. Response status:', response.status);
+    
+    const articles = await response.json();
+    console.log('8. Articles received:', articles.length);
+    console.log('9. First article:', articles[0]);
+    
+    const recommendedLinks = new Set(articles.map(a => normalizeUrl(a.link)));
+    console.log('10. Recommended links (normalized):', Array.from(recommendedLinks).slice(0, 3));
+    console.log('10. Recommended links (normalized):', Array.from(recommendedLinks).slice(0, 3));
+console.log('10b. ALL recommended links:', Array.from(recommendedLinks)); // ADD THIS LINE
+
+    const allLinks = document.querySelectorAll('a.story-link');
+    console.log('11. Total story links found on page:', allLinks.length);
+    
+    if (allLinks.length === 0) {
+      console.log('❌ No story links found! Selector might be wrong.');
+      console.log('Available link classes:', Array.from(document.querySelectorAll('a')).slice(0, 5).map(a => a.className));
+    }
+    
+    let shownCount = 0;
+    let hiddenCount = 0;
+
+    allLinks.forEach((link, index) => {
+      const normalizedHref = normalizeUrl(link.href);
+      const isRecommended = recommendedLinks.has(normalizedHref);
+      
+      if (index < 3) {
+        console.log(`12. Link ${index}: ${normalizedHref} - Recommended: ${isRecommended}`);
+      }
+      
+      if (isRecommended) {
+        link.style.display = '';
+        shownCount++;
+      } else {
+        link.style.display = 'none';
+        hiddenCount++;
+        const section = link.closest('section.body-post');
+        if (section) section.style.display = 'none';
+      }
+    });
+    
+    console.log('13. Shown:', shownCount, 'Hidden:', hiddenCount);
+    
+    // Add banner
+    const banner = document.createElement('div');
+    banner.id = 'filter-banner';
+    banner.style.cssText = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-align: center; padding: 12px; font-weight: 600; position: sticky; top: 0; z-index: 9998;';
+    banner.innerHTML = `✨ Personalized Feed: Showing ${articles.length} articles <button id="disable-filter" style="margin-left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Show All</button>`;
+    document.body.insertBefore(banner, document.body.firstChild);
+    
+    console.log('14. Banner added');
+    
+    document.getElementById('disable-filter').onclick = () => {
+      document.querySelectorAll('a.story-link, section.body-post').forEach(el => el.style.display = '');
+      banner.remove();
+      console.log('15. Filter disabled');
+    };
+    
+    console.log('=== FILTER ARTICLES DEBUG END ===');
+  } catch (error) {
+    console.error('❌ Filter error:', error);
+    console.error('Error stack:', error.stack);
+  }
+}
+
 // Listen for messages from background script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "explainText") {
@@ -904,6 +1008,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   //highlightKeywords();
   addReadingTime();
   styleExternalLinks();
+
+  filterArticles();
   
   // Apply article summary if on article page
   if (isArticlePage()) {
