@@ -2,7 +2,7 @@
 
 console.log('Hacker News Modifier extension loaded!');
 
-// Example 1: Add a custom banner at the top
+// Example 1: Add a custom banner at the top (invisible, used for duplicate check)
 function addCustomBanner() {
   // Check if banner already exists
   if (document.getElementById('custom-banner')) {
@@ -11,7 +11,7 @@ function addCustomBanner() {
   
   const banner = document.createElement('div');
   banner.id = 'custom-banner';
-  banner.textContent = '🚀 Enhanced by Chrome Extension';
+  banner.style.display = 'none'; // Hide the banner
   document.body.insertBefore(banner, document.body.firstChild);
 }
 
@@ -155,6 +155,15 @@ function styleExternalLinks() {
     }
   });
 }
+
+// Listen for messages from background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "explainText") {
+    console.log("Explain this text:", request.text);
+    // TODO: Add explanation functionality here
+    alert(`You selected: "${request.text}"\n\nExplanation feature coming soon!`);
+  }
+});
 
 // Run modifications only once
 (function() {
