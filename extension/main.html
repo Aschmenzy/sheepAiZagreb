@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hacker News Modifier - Dashboard</title>
   <link rel="stylesheet" href="css/popup.css">
+  <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
   <div class="container">
@@ -31,20 +32,47 @@
 
         <div class="dashboard-section">
           <h2>Your Interests</h2>
-          <div class="tags-container" id="dashboardTags">
-            <!-- Interest tags will be displayed here -->
+            <div class="interests-dropdown">
+              <div class="dropdown-header" id="dropdownHeader">
+                <span class="dropdown-header-text" id="dropdownHeaderText">Click to view interests</span>
+                <span class="dropdown-arrow" id="dropdownArrow">▼</span>
+              </div>
+            <div class="dropdown-content" id="dropdownContent">
+              <!-- Interest items will be dynamically inserted here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW: Summary Control Section -->
+        <div class="dashboard-section">
+          <div class="summary-control">
+            <h3>Article Summary Level</h3>
+            <div class="slider-container">
+              <input type="range" min="0" max="100" value="50" class="slider" id="summarySlider">
+              <div class="slider-labels">
+                <span>Full Articles</span>
+                <span>Brief Summary</span>
+              </div>
+              <div class="summary-level" id="summaryLevel">Medium Summary</div>
+            </div>
           </div>
         </div>
 
         <div class="dashboard-actions">
           <button class="action-button primary" id="viewFiltered">
-            View Filtered News
+            📰 View Filtered News
           </button>
+          
+          <!-- NEW: Chat with AI button -->
+          <button class="action-button ai" id="chatWithAI">
+            🤖 Chat with AI About Articles
+          </button>
+          
           <button class="action-button secondary" id="editPreferences">
-            Edit Preferences
+            ✏️ Edit Preferences
           </button>
           <button class="action-button secondary" id="resetPreferences">
-            Reset All
+            🔄 Reset All
           </button>
         </div>
 
