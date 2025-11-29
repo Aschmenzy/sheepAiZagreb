@@ -195,7 +195,7 @@ function showError(message) {
 async function getAIResponse(userMessage) {
   const apiKey = CONFIG.OPENAI_API_KEY;
   
-  if (!apiKey || apiKey === 'YOUR_OPENAI_API_KEY_HERE') {
+  if (!apiKey || apiKey === 'OPENAI_API_KEY') {
     throw new Error('Please add your OpenAI API key to config.js');
   }
   

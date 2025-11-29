@@ -43,17 +43,18 @@
           </div>
         </div>
 
-        <!-- NEW: Summary Control Section -->
+        <!-- Summary Control Section with 3 discrete levels -->
         <div class="dashboard-section">
           <div class="summary-control">
             <h3>Article Summary Level</h3>
             <div class="slider-container">
-              <input type="range" min="0" max="100" value="50" class="slider" id="summarySlider">
+              <input type="range" min="0" max="2" value="1" step="1" class="slider" id="summarySlider">
               <div class="slider-labels">
-                <span>Full Articles</span>
-                <span>Brief Summary</span>
+                <span>No Summary</span>
+                <span>Medium</span>
+                <span>Brief</span>
               </div>
-              <div class="summary-level" id="summaryLevel">Medium Summary</div>
+              <div class="summary-level" id="summaryLevel">📝 Medium Summary</div>
             </div>
           </div>
         </div>
@@ -63,7 +64,7 @@
             📰 View Filtered News
           </button>
           
-          <!-- NEW: Chat with AI button -->
+          <!-- Chat with AI button -->
           <button class="action-button ai" id="chatWithAI">
             🤖 Chat with AI About Articles
           </button>
