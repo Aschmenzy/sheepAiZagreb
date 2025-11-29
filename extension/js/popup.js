@@ -1,20 +1,93 @@
 let selectedProfession = null;
-let selectedInterests = [];
-let additionalInterests = [];
+let selectedPrimaryInterests = [];
+let selectedAdditionalInterests = [];
+let userId = null;
 
-// Wait for DOM to be fully loaded before checking setup status
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if user has already completed setup
-  chrome.storage.sync.get(['setupComplete'], function(result) {
-    console.log('Setup complete?', result.setupComplete);
-    if (result.setupComplete) {
-      // Redirect to main screen if setup is complete
-      console.log('Redirecting to main.html');
-      window.location.href = 'main.html';
+// Map profession interests to their IDs from the backend
+const INTEREST_NAME_TO_ID = {
+  // Security Engineer (1-6)
+  "Vulnerability Research & Exploit Development": 1,
+  "Application Security & Secure Coding": 2,
+  "Network Security & Firewalls": 3,
+  "Cloud Security (AWS, Azure, GCP)": 4,
+  "Identity & Access Management": 5,
+  "Mobile Security & IoT": 6,
+  
+  // Software Developer (7-12)
+  "Frontend Frameworks (React, Vue, Angular)": 7,
+  "Backend & APIs (Node, Python, Go)": 8,
+  "Databases & Data Engineering": 9,
+  "AI/ML & Machine Learning Tools": 10,
+  "Mobile Development (iOS, Android, Flutter)": 11,
+  "Game Development & Graphics": 12,
+  
+  // DevOps/SRE (13-18)
+  "Containers & Orchestration (Docker, K8s)": 13,
+  "CI/CD & Automation Pipelines": 14,
+  "Cloud Infrastructure (AWS, Azure, GCP)": 15,
+  "Monitoring & Observability": 16,
+  "Infrastructure as Code (Terraform, Ansible)": 17,
+  "Performance & Site Reliability": 18,
+  
+  // System Administrator (19-24)
+  "Linux Administration & Shell Scripting": 19,
+  "Windows Server & Active Directory": 20,
+  "Networking & DNS Management": 21,
+  "Storage & Backup Solutions": 22,
+  "Virtualization (VMware, Hyper-V)": 23,
+  "Automation & Configuration Management": 24,
+  
+  // Security Analyst (25-30)
+  "Threat Intelligence & Threat Hunting": 25,
+  "Incident Response & Forensics": 26,
+  "Security Operations & SIEM": 27,
+  "Malware Analysis & Reverse Engineering": 28,
+  "Penetration Testing & Red Teaming": 29,
+  "Compliance & Risk Management": 30,
+  
+  // Other (31-36)
+  "Cybersecurity & Privacy": 31,
+  "Software Development & Programming": 32,
+  "Cloud & Infrastructure": 33,
+  "AI & Machine Learning": 34,
+  "Data Science & Analytics": 35,
+  "Web Technologies & Frameworks": 36
+};
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check if user already exists and setup is complete
+  const stored = await chrome.storage.sync.get(['userId', 'profession', 'setupComplete']);
+  
+  // If setup is complete, redirect to main screen
+  if (stored.setupComplete) {
+    console.log('Setup already complete, redirecting to main.html');
+    window.location.href = 'main.html';
+    return;
+  }
+  
+  if (stored.userId) {
+    userId = stored.userId;
+    try {
+      // Load user data from backend
+      const userData = await ApiService.getUser(userId);
+      selectedProfession = userData.job;
+      
+      // Pre-select profession button
+      document.querySelectorAll('.profession-btn').forEach(btn => {
+        if (btn.dataset.profession === selectedProfession) {
+          btn.classList.add('selected');
+          document.getElementById('selectedProfession').style.display = 'block';
+          document.getElementById('currentProfession').textContent = selectedProfession;
+        }
+      });
+      
+      console.log('Loaded existing user:', userData);
+    } catch (error) {
+      console.error('Error loading user data:', error);
     }
-  });
-
-  // Initialize all event listeners
+  }
+  
   initializeEventListeners();
 });
 
@@ -34,7 +107,7 @@ function initializeEventListeners() {
   // Next button - go to interests screen
   document.getElementById('nextToProfession').addEventListener('click', function() {
     if (!selectedProfession) {
-      alert('Please select a profession first');
+      showError('Please select a profession first');
       return;
     }
     
@@ -49,8 +122,8 @@ function initializeEventListeners() {
 
   // Next button - go to additional interests
   document.getElementById('nextToAdditional').addEventListener('click', function() {
-    if (selectedInterests.length === 0) {
-      alert('Please select at least one interest');
+    if (selectedPrimaryInterests.length === 0) {
+      showError('Please select at least one interest');
       return;
     }
     
@@ -91,8 +164,7 @@ function showInterestsScreen(profession) {
   questions.options.forEach((option, index) => {
     const btn = document.createElement('button');
     btn.className = 'interest-btn';
-    btn.dataset.index = index;
-    btn.dataset.tags = JSON.stringify(option.tags);
+    btn.dataset.interestName = option.text;
     
     btn.innerHTML = `
       <span class="icon">${option.icon}</span>
@@ -111,16 +183,17 @@ function showInterestsScreen(profession) {
   document.getElementById('interestScreen').style.display = 'block';
 }
 
-// Update selected interests array
+// Update selected primary interests array
 function updateSelectedInterests() {
-  selectedInterests = [];
+  selectedPrimaryInterests = [];
   document.querySelectorAll('#interestGrid .interest-btn.selected').forEach(btn => {
-    selectedInterests.push({
-      text: btn.querySelector('.title').textContent,
-      tags: JSON.parse(btn.dataset.tags)
-    });
+    const interestName = btn.dataset.interestName;
+    const interestId = INTEREST_NAME_TO_ID[interestName];
+    if (interestId) {
+      selectedPrimaryInterests.push(interestId);
+    }
   });
-  console.log('Selected interests:', selectedInterests);
+  console.log('Selected primary interests:', selectedPrimaryInterests);
 }
 
 // Function to display additional interests from other professions
@@ -152,8 +225,7 @@ function showAdditionalInterestsScreen() {
     questions.options.forEach((option, index) => {
       const btn = document.createElement('button');
       btn.className = 'interest-btn small';
-      btn.dataset.profession = profession;
-      btn.dataset.tags = JSON.stringify(option.tags);
+      btn.dataset.interestName = option.text;
       
       btn.innerHTML = `
         <span class="icon">${option.icon}</span>
@@ -185,32 +257,87 @@ function showAdditionalInterestsScreen() {
 
 // Update additional interests array
 function updateAdditionalInterests() {
-  additionalInterests = [];
+  selectedAdditionalInterests = [];
   document.querySelectorAll('#additionalContainer .interest-btn.selected').forEach(btn => {
-    additionalInterests.push({
-      text: btn.querySelector('.title').textContent,
-      tags: JSON.parse(btn.dataset.tags),
-      fromProfession: btn.dataset.profession
-    });
+    const interestName = btn.dataset.interestName;
+    const interestId = INTEREST_NAME_TO_ID[interestName];
+    if (interestId) {
+      selectedAdditionalInterests.push(interestId);
+    }
   });
-  console.log('Additional interests:', additionalInterests);
+  console.log('Additional interests:', selectedAdditionalInterests);
 }
 
-// Save all preferences and redirect to main screen
-function saveAllPreferences() {
-  const allInterests = [...selectedInterests, ...additionalInterests];
+// Save all preferences and send to backend
+async function saveAllPreferences() {
+  const allInterestIds = [...selectedPrimaryInterests, ...selectedAdditionalInterests];
   
-  chrome.storage.sync.set({
-    setupComplete: true,
-    profession: selectedProfession,
-    primaryInterests: selectedInterests,
-    additionalInterests: additionalInterests,
-    allInterests: allInterests
-  }, function() {
-    console.log('Preferences saved!');
+  if (!selectedProfession || allInterestIds.length === 0) {
+    showError('Please select your profession and at least one interest');
+    return;
+  }
+  
+  try {
+    showLoading(true);
+    
+    let result;
+    if (userId) {
+      // Update existing user
+      console.log('Updating user:', userId);
+      result = await ApiService.updateUser(userId, selectedProfession, allInterestIds);
+    } else {
+      // Create new user
+      console.log('Creating new user');
+      result = await ApiService.createUser(selectedProfession, allInterestIds);
+      userId = result.userId;
+    }
+    
+    // Save to Chrome storage
+    await chrome.storage.sync.set({
+      setupComplete: true,
+      userId: userId,
+      profession: selectedProfession,
+      interestIds: allInterestIds
+    });
+    
+    console.log('Preferences saved successfully!');
+    console.log('User ID:', userId);
     console.log('Profession:', selectedProfession);
-    console.log('All interests:', allInterests);
+    console.log('Interest IDs:', allInterestIds);
+    
     // Redirect to main screen
     window.location.href = 'main.html';
-  });
+    
+  } catch (error) {
+    console.error('Error saving preferences:', error);
+    showError(error.message || 'Failed to save preferences. Make sure the backend is running on http://127.0.0.1:5000');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Show error message
+function showError(message) {
+  alert('Error: ' + message);
+}
+
+// Show success message
+function showSuccess(message) {
+  alert(message);
+}
+
+// Show/hide loading state
+function showLoading(show) {
+  const saveBtn = document.getElementById('savePreferences');
+  const skipBtn = document.getElementById('skipAdditional');
+  
+  if (show) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    if (skipBtn) skipBtn.disabled = true;
+  } else {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Preferences';
+    if (skipBtn) skipBtn.disabled = false;
+  }
 }
