@@ -132,17 +132,42 @@ document.getElementById('viewFiltered').addEventListener('click', function() {
   });
 });
   
-  // Chat with AI button
-  document.getElementById('chatWithAI').addEventListener('click', function() {
-    // Open thehackernews.com and trigger chat mode
-    chrome.tabs.create({ url: 'https://thehackernews.com' }, function(tab) {
-      // Send message to open chat after page loads
-      setTimeout(() => {
-        chrome.tabs.sendMessage(tab.id, { action: 'openChat' });
-      }, 2000);
-    });
-  });
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+  const currentTab = tabs[0];
   
+  if (currentTab.url && currentTab.url.includes('thehackernews.com') && currentTab.url.includes('/2025/')) {
+    // On an article page, get the title
+    chrome.tabs.sendMessage(currentTab.id, { action: 'getArticleTitle' }, function(response) {
+      if (response && response.title && response.title !== 'this article') {
+        const chatButton = document.getElementById('chatWithAI');
+        // Truncate title to 50 characters
+        let shortTitle = response.title;
+        if (shortTitle.length > 50) {
+          shortTitle = shortTitle.substring(0, 50) + '...';
+        }
+        chatButton.textContent = `💬 Chat with AI about: ${shortTitle}`;
+      }
+    });
+  }
+});
+
+// Chat with AI button click handler
+document.getElementById('chatWithAI').addEventListener('click', function() {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    const currentTab = tabs[0];
+    
+    // Check if already on thehackernews.com
+    if (currentTab.url && currentTab.url.includes('thehackernews.com')) {
+      // Already on the site, just trigger chat
+      chrome.tabs.sendMessage(currentTab.id, { action: 'openChat' });
+      setTimeout(() => window.close(), 100);
+    } else {
+      // Navigate to thehackernews.com first
+      chrome.tabs.update(currentTab.id, {url: 'https://thehackernews.com'});
+      window.close();
+    }
+  });
+});
   // Edit Preferences button
   document.getElementById('editPreferences').addEventListener('click', async function() {
     // Clear setupComplete to allow editing

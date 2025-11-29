@@ -756,15 +756,29 @@ function openChatMode() {
   createAIPanel();
   panelMode = 'chat';
   
+  // Get article title if on article page
+  const articleTitle = getArticleTitle();
+  const isOnArticle = isArticlePage();
+  
   // Update panel title
   document.getElementById('ai-panel-title').textContent = '🤖 Chat with AI';
-  document.getElementById('ai-panel-subtitle').textContent = 'Ask me anything about this article';
+  
+  // Update subtitle based on whether we're on an article
+  if (isOnArticle && articleTitle !== 'this article') {
+    document.getElementById('ai-panel-subtitle').textContent = `About: ${articleTitle}`;
+  } else {
+    document.getElementById('ai-panel-subtitle').textContent = 'Ask me anything';
+  }
   
   // Clear messages and add welcome message
   const messagesContainer = document.getElementById('ai-messages');
   messagesContainer.innerHTML = '';
   
-  addMessage('system', '<strong>AI Assistant Ready</strong><br>I\'ve read the article and I\'m ready to answer your questions!');
+  if (isOnArticle) {
+    addMessage('system', `<strong>AI Assistant Ready</strong><br>I've read "<em>${articleTitle}</em>" and I'm ready to answer your questions!`);
+  } else {
+    addMessage('system', '<strong>AI Assistant Ready</strong><br>Ask me anything!');
+  }
   
   // Open the panel
   document.getElementById('ai-panel').classList.add('open');
@@ -1055,6 +1069,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     openExplainMode(request.text);
   } else if (request.action === "openChat") {
     openChatMode();
+  } else if (request.action === "getArticleTitle") {
+    // Return the article title
+    const title = getArticleTitle();
+    sendResponse({ title: title });
+    return true; // Keep the message channel open for async response
   }
 });
 
